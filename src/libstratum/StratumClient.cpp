@@ -87,6 +87,7 @@ void StratumClient<Miner, Job, Solution>::workLoop()
             std::istream is(&m_responseBuffer);
             std::string response;
             getline(is, response);
+LogS("RECV: %s\n", response);
 
             if (!response.empty() && response.front() == '{' && response.back() == '}') {
                 Value valResponse;
@@ -143,6 +144,12 @@ void StratumClient<Miner, Job, Solution>::connect()
            << p_active->host << "\",\""
            << p_active->port << "\",\""
            << p_miner->userAgent() << "\", null]}\n";
+{
+    auto data = m_requestBuffer.data();
+    std::string str(boost::asio::buffers_begin(data),
+                    boost::asio::buffers_begin(data) + m_requestBuffer.size());
+    LogS("SEND: %s", str);
+}
         write(m_socket, m_requestBuffer);
     }
 }
@@ -237,6 +244,12 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
                 os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
                    << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
             }
+{
+    auto data = m_requestBuffer.data();
+    std::string str(boost::asio::buffers_begin(data),
+                    boost::asio::buffers_begin(data) + m_requestBuffer.size());
+    LogS("SEND: %s", str);
+}
             write(m_socket, m_requestBuffer);
         }
         break;
@@ -276,6 +289,12 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
         }
         os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
                << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
+{
+    auto data = m_requestBuffer.data();
+    std::string str(boost::asio::buffers_begin(data),
+                    boost::asio::buffers_begin(data) + m_requestBuffer.size());
+    LogS("SEND: %s", str);
+}
         write(m_socket, m_requestBuffer);
         break;
     default:
@@ -375,6 +394,12 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
         std::ostream os(&m_requestBuffer);
         os << json;
         m_stale = false;
+{
+    auto data = m_requestBuffer.data();
+    std::string str(boost::asio::buffers_begin(data),
+                    boost::asio::buffers_begin(data) + m_requestBuffer.size());
+    LogS("SEND: %s", str);
+}
         write(m_socket, m_requestBuffer);
         return true;
     } else if (tempPreviousJob && tempPreviousJob->evalSolution(solution)) {
@@ -385,6 +410,12 @@ bool StratumClient<Miner, Job, Solution>::submit(const Solution* solution)
         os << json;
         m_stale = true;
         LogS("[WARN] Submitting stale solution.\n");
+{
+    auto data = m_requestBuffer.data();
+    std::string str(boost::asio::buffers_begin(data),
+                    boost::asio::buffers_begin(data) + m_requestBuffer.size());
+    LogS("SEND: %s", str);
+}
         write(m_socket, m_requestBuffer);
         return true;
     } else {

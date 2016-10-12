@@ -113,9 +113,16 @@ void static ZcashMinerThread(ZcashMiner* miner, int size, int pos)
 
                     if (UintToArith256(header.GetHash()) > target) {
                         LogPrint("pow", " too large.\n");
+                        LogPrint("pow", "hash: %s, target: %s\n", header.GetHash().ToString(), target.ToString());
                         return false;
                     }
 
+{
+CDataStream ss(SER_GETHASH, PROTOCOL_VERSION);
+ss << header;
+LogPrint("pow", "DATA: %s\n", HexStr(ss.begin(), ss.end()));
+LogPrint("pow", "HASH: %s\n", header.GetHash().ToString());
+}
                     // Found a solution
                     LogPrintf("Found solution satisfying the server target\n");
                     EquihashSolution solution {bNonce, soln};
