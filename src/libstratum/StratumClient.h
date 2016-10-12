@@ -25,6 +25,7 @@ typedef struct {
         string port;
         string user;
         string pass;
+        bool extranonce_subscripbe;
 } cred_t;
 
 template <typename Miner, typename Job, typename Solution>
@@ -34,12 +35,14 @@ public:
     StratumClient(Miner * m,
                   string const & host, string const & port,
                   string const & user, string const & pass,
+                  bool const & extranonce_subscripbe,
                   int const & retries, int const & worktimeout);
     ~StratumClient() { }
 
     void setFailover(string const & host, string const & port);
     void setFailover(string const & host, string const & port,
-                     string const & user, string const & pass);
+                     string const & user, string const & pass,
+                     bool const & extranonce_subscripbe);
 
     bool isRunning() { return m_running; }
     bool isConnected() { return m_connected && m_authorized; }

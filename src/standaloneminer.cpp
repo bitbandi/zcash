@@ -46,6 +46,7 @@ std::string HelpMessageMiner()
                                strprintf(_("Username for Stratum server (default: %u)"), "x"));
     strUsage += HelpMessageOpt("-password=<pw>",
                                strprintf(_("Password for Stratum server (default: %u)"), "x"));
+    strUsage += HelpMessageOpt("-extranonce-subscripbe", _("Enable 'extranonce' stratum subscribe for pool"));
 
     strUsage += HelpMessageGroup(_("Debugging/Testing options:"));
     string debugCategories = "cycles, pow, stratum"; // Don't translate these
@@ -226,6 +227,7 @@ int main(int argc, char* argv[])
             &miner, host, port,
             GetArg("-user", "x"),
             GetArg("-password", "x"),
+            GetBoolArg("-extranonce-subscripbe", false),
             0, 0
         };
 

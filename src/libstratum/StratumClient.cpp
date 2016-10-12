@@ -20,6 +20,7 @@ StratumClient<Miner, Job, Solution>::StratumClient(
         Miner * m,
         string const & host, string const & port,
         string const & user, string const & pass,
+        bool const & extranonce_subscripbe,
         int const & retries, int const & worktimeout)
     : m_socket(m_io_service)
 {
@@ -27,6 +28,7 @@ StratumClient<Miner, Job, Solution>::StratumClient(
     m_primary.port = port;
     m_primary.user = user;
     m_primary.pass = pass;
+    m_primary.extranonce_subscripbe = extranonce_subscripbe;
 
     p_active = &m_primary;
 
@@ -46,18 +48,20 @@ template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::setFailover(
         string const & host, string const & port)
 {
-    setFailover(host, port, p_active->user, p_active->pass);
+    setFailover(host, port, p_active->user, p_active->pass, 0);
 }
 
 template <typename Miner, typename Job, typename Solution>
 void StratumClient<Miner, Job, Solution>::setFailover(
         string const & host, string const & port,
-        string const & user, string const & pass)
+        string const & user, string const & pass,
+        bool const & extranonce_subscripbe)
 {
     m_failover.host = host;
     m_failover.port = port;
     m_failover.user = user;
     m_failover.pass = pass;
+    m_failover.extranonce_subscripbe = extranonce_subscripbe;
 }
 
 template <typename Miner, typename Job, typename Solution>
@@ -225,9 +229,14 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             LogS("Subscribed to stratum server\n");
             const Array& result = valRes.get_array();
             // Ignore session ID for now.
-            p_miner->setServerNonce(result);
-            os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
-               << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
+            p_miner->setServerNonce(result, 1);
+            if (p_active->extranonce_subscripbe) {
+                os << "{\"id\": 8, \"method\": \"mining.extranonce.subscribe\", \"params\": []}\n";
+                LogS("Try to subscriptbe\n");
+            } else {
+                os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
+                   << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
+            }
             write(m_socket, m_requestBuffer);
         }
         break;
@@ -259,6 +268,15 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
             LogS("[WARN] :-( Not accepted.\n");
             p_miner->rejectedSolution(m_stale);
         }
+        break;
+    case 8:
+        valRes = find_value(responseObject, "result");
+        if (valRes.type() == bool_type && valRes.get_bool()) {
+            LogS("Stratum extranonce subscribed\n");
+        }
+        os << "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\""
+               << p_active->user << "\",\"" << p_active->pass << "\"]}\n";
+        write(m_socket, m_requestBuffer);
         break;
     default:
         const Value& valMethod = find_value(responseObject, "method");
@@ -294,6 +312,13 @@ void StratumClient<Miner, Job, Solution>::processReponse(const Object& responseO
                         //p_worktimer->async_wait(boost::bind(&StratumClient::work_timeout_handler, this, boost::asio::placeholders::error));
                     }
                 }
+            }
+        } else if (method == "mining.set_extranonce") {
+            const Value& valParams = find_value(responseObject, "params");
+            if (valParams.type() == array_type) {
+                const Array& params = valParams.get_array();
+                p_miner->setServerNonce(params, 0);
+                LogS("Nonce changed to %s\n", params[0].get_str());
             }
         } else if (method == "mining.set_target") {
             const Value& valParams = find_value(responseObject, "params");

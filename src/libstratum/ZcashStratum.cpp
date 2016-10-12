@@ -271,9 +271,9 @@ void ZcashMiner::stop()
     }
 }
 
-void ZcashMiner::setServerNonce(const Array& params)
+void ZcashMiner::setServerNonce(const Array& params, const int index)
 {
-    auto n1str = params[1].get_str();
+    auto n1str = params[index].get_str();
     std::vector<unsigned char> nonceData(ParseHex(n1str));
     while (nonceData.size() < 32) {
         nonceData.push_back(0);

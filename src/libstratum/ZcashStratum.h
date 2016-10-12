@@ -85,7 +85,7 @@ public:
     void start();
     void stop();
     bool isMining() { return minerThreads; }
-    void setServerNonce(const Array& params);
+    void setServerNonce(const Array& params, const int index);
     ZcashJob* parseJob(const Array& params);
     void setJob(ZcashJob* job);
     void onSolutionFound(const std::function<bool(const EquihashSolution&)> callback);
